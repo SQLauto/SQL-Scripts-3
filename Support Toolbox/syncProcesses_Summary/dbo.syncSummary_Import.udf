@@ -1,0 +1,77 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[syncSummary_Import]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [dbo].[syncSummary_Import]
+GO
+
+SET ANSI_NULLS OFF
+GO
+
+SET QUOTED_IDENTIFIER OFF
+GO
+
+CREATE FUNCTION [dbo].[syncSummary_Import] (
+	  @startDate datetime = null
+	  , @stopDate datetime = null
+)	
+RETURNS @table TABLE
+(
+	  SyncProcess nvarchar(25)
+	, StartTime datetime
+	, StopTime datetime
+	, Status nvarchar(25)
+)
+
+AS
+/************************************************************************
+
+	$History: $
+
+*************************************************************************/
+BEGIN
+
+	set @startDate = convert(varchar,(isnull(@startDate,getdate())),1)
+	set @stopDate = convert(varchar,(isnull(@stopDate,getdate())),1) + ' 23:59:59'
+	
+	;with cteImportStartTimes
+	as (
+		select row_number() over( order by SLTimeStamp desc ) as [ImportId]
+			, sltimestamp as [ImportStartTime]
+		from syncSystemLog
+		where LogMessage = 'scManifest_Data_Load starting...'
+		--and datediff(d, sltimestamp, @startDate) = 0
+		and sltimestamp between @startDate and @stopDate
+	)
+	, cteImportEndTimes
+	as (
+		select row_number() over( order by SLTimeStamp desc ) as [ImportId]
+			, sltimestamp as [ImportEndTime]
+			, case LogMessage
+				when 'scManifest_Data_Load completed successfully' then 'Success'
+				when 'scManifest_Data_Load FAILED!  See scManifest_Data_Load.out' then 'Error'
+				end as [Status]
+			, LogMessage	
+		from syncSystemLog
+		where LogMessage in ( 'scManifest_Data_Load completed successfully', 'scManifest_Data_Load FAILED!  See scManifest_Data_Load.out')
+		--and datediff(d, sltimestamp, @startDate) = 0
+		and sltimestamp between @startDate and @stopDate
+	)
+	insert into @table
+	select --s.ImportId,
+		'Import' as [SyncProcess]
+		, s.ImportStartTime, e.ImportEndTime
+		--, cast( DATEDIFF(	SECOND, s.ImportStartTime, e.ImportEndTime) / 3600 as varchar)
+		--+ 'h ' + 
+		--+ right('00' + cast( DATEDIFF(	SECOND, s.ImportStartTime, e.ImportEndTime) % 3600 / 60 as varchar), 2)
+		--+ 'm ' + 
+		--+ right('00' + cast( DATEDIFF(	SECOND, s.ImportStartTime, e.ImportEndTime) % 60 as varchar), 2)
+		--+ 's ' AS [Duration]
+		, e.[Status]
+		--, e.LogMessage
+	from cteImportStartTimes s
+	left join cteImportEndTimes e
+		on s.ImportId = e.ImportId	
+	order by s.ImportStartTime desc
+
+	
+	RETURN
+END
+GO	

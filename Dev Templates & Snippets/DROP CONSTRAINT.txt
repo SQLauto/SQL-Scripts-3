@@ -1,0 +1,8 @@
+if exists (
+	select *
+	from sysindexes 
+	where id = object_id('scDrawAdjustmentsAudit')
+	and name = 'FK_scDrawAdjustmentsAudit_scDraws'
+)
+ALTER TABLE dbo.scDrawAdjustmentsAudit DROP CONSTRAINT FK_scDrawAdjustmentsAudit_scDraws
+GO

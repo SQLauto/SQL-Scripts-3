@@ -1,0 +1,77 @@
+declare @msg nvarchar(4000)
+
+select @msg = 'Processing for: ' + substring(
+		(
+			select ', Pub ' + Publication + ' (' + csv + ')'
+			from  ( 
+				select t1.Publication
+			, [csv] = 
+				stuff((
+					select ', ' + left( convert(varchar, csv.DrawDate, 1), 5) as [text()]
+					from (
+						select distinct publication, drawdate
+						from scManifestLoad_View 
+					)	csv
+					where csv.Publication = t1.Publication
+					for xml path('')
+			), 1, 2, '')
+
+	from ( 
+		select distinct publication
+		from scManifestLoad_View 
+		) t1
+	--order by 1
+				) v
+			--where t.y = z
+			--order by DeliveryDate
+		 for xml path('')
+		)
+		, 3, 200000)
+
+print @msg
+
+
+
+
+--|  STUFF ( character_expression , start , length , replaceWith_expression )
+--|  Stuff( result of the query listed above, 1, 1, '')
+
+/*
+	scManifestLoad_View
+	Publication
+	scManifestLoad_View
+	DrawDate
+	[csv]
+	Publication
+	
+	select t1.category
+			, [csv] = 
+				stuff((
+					select ',' + csv.subcategory as [text()]
+					from subcategories csv
+					where csv.join_column = t1.join_column
+					for xml path('')
+
+					), 1, 1, '')
+
+	from categories t1
+
+*/
+
+select t1.Publication
+		, [csv] = 
+			stuff((
+				select ', ' + left( convert(varchar, csv.DrawDate, 1), 5) as [text()]
+				from (
+					select distinct publication, drawdate
+					from scManifestLoad_View 
+				)	csv
+				where csv.Publication = t1.Publication
+				for xml path('')
+		), 1, 1, '')
+
+from ( 
+	select distinct publication
+	from scManifestLoad_View 
+	) t1
+order by 1

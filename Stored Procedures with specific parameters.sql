@@ -1,0 +1,4 @@
+select SPECIFIC_NAME, PARAMETER_NAME, CHARACTER_MAXIMUM_LENGTH
+from information_schema.parameters
+where PARAMETER_NAME = '@mfstid'
+and CHARACTER_MAXIMUM_LENGTH = 400

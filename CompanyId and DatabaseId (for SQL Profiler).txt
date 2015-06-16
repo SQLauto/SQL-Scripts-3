@@ -1,0 +1,9 @@
+
+
+select dbid, c.* 
+from nssessioncompanies c
+join (
+	select [name], [dbid]
+	from master..sysdatabases
+	) db
+on c.CoDbCatalog = db.[name]

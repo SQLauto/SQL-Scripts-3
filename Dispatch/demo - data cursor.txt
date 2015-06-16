@@ -1,0 +1,212 @@
+set nocount on 
+begin tran
+
+declare @counter int,
+	@AddressConcat varchar(255), 
+	@ApartmentNumber varchar(10), 
+	@City varchar(30), 
+	@Company varchar(25), 
+	@DistributionCenter varchar(25), 
+	@District varchar(25), 
+	@ExtensionAttribute1 varchar(255), 
+	@ExtensionAttribute2 varchar(255), 
+	@ExtensionAttribute3 varchar(255), 
+	@ExtensionAttribute4 varchar(255), 
+	@ExtensionAttribute5 varchar(255), 
+	@HouseNumber varchar(15), 
+	@MessageID int,
+	@MessageDateTime datetime,
+	@MessageReason varchar(10), 
+	@MessageStatusID int,
+	@MessageStatusDateTime datetime,
+	@MessageTargetID int,
+	@MessageText varchar(1024), 
+	@MessageType varchar(10), 
+	@Publication varchar(50), 
+	@Route varchar(25), 
+	@SpecialInstructions varchar(1024), 
+	@State varchar(25), 
+	@StreetDirection varchar(10), 
+	@StreetName varchar(50), 
+	@StreetType varchar(10), 
+	@SubscriberAccountNumber varchar(50), 
+	@SubscriberName varchar(50), 
+	@SubscriberPhone varchar(25), 
+	@Zip varchar(11), 
+	@Zone varchar(25), 
+	@SDM_IsActive bit,
+	@SDM_LastUpdated datetime,
+	@SDM_samAccountName varchar(255),
+	@prev_AddressConcat varchar(255), 
+	@prev_ApartmentNumber varchar(10), 
+	@prev_City varchar(30), 
+	@prev_Company varchar(25), 
+	@prev_DistributionCenter varchar(25), 
+	@prev_District varchar(25), 
+	@prev_ExtensionAttribute1 varchar(255), 
+	@prev_ExtensionAttribute2 varchar(255), 
+	@prev_ExtensionAttribute3 varchar(255), 
+	@prev_ExtensionAttribute4 varchar(255), 
+	@prev_ExtensionAttribute5 varchar(255), 
+	@prev_HouseNumber varchar(15), 
+	@prev_MessageID int,
+	@prev_MessageDateTime datetime,
+	@prev_MessageReason varchar(10), 
+	@prev_MessageStatusID int,
+	@prev_MessageStatusDateTime datetime,
+	@prev_MessageTargetID int,
+	@prev_MessageText varchar(1024), 
+	@prev_MessageType varchar(10), 
+	@prev_Publication varchar(50), 
+	@prev_Route varchar(25), 
+	@prev_SpecialInstructions varchar(1024), 
+	@prev_State varchar(25), 
+	@prev_StreetDirection varchar(10), 
+	@prev_StreetName varchar(50), 
+	@prev_StreetType varchar(10), 
+	@prev_SubscriberAccountNumber varchar(50), 
+	@prev_SubscriberName varchar(50), 
+	@prev_SubscriberPhone varchar(25), 
+	@prev_Zip varchar(11), 
+	@prev_Zone varchar(25), 
+	@prev_SDM_IsActive bit,
+	@prev_SDM_LastUpdated datetime,
+	@prev_SDM_samAccountName varchar(255)
+
+set @counter = 0
+
+declare msg_cursor cursor
+for 
+	select AddressConcat
+	,ApartmentNumber
+	,City
+	,Company
+	,DistributionCenter
+	,District
+	,ExtensionAttribute1
+	,ExtensionAttribute2
+	,ExtensionAttribute3
+	,ExtensionAttribute4
+	,ExtensionAttribute5
+	,HouseNumber
+	,MessageID
+	,dateadd( d, -1, MessageDateTime )
+	,MessageReason
+	,MessageStatusID
+	,MessageStatusDateTime
+	,MessageTargetID
+	,MessageText
+	,MessageType
+	,Publication
+	,Route
+	,SpecialInstructions
+	,State
+	,StreetDirection
+	,StreetName
+	,StreetType
+	,SubscriberAccountNumber
+	,SubscriberName
+	,SubscriberPhone
+	,Zip
+	,Zone
+	,SDM_IsActive
+	,SDM_LastUpdated
+	,SDM_samAccountName
+	from demessage msg1
+open msg_cursor
+fetch next from msg_cursor into @AddressConcat,@ApartmentNumber,@City,@Company,@DistributionCenter,@District,@ExtensionAttribute1,@ExtensionAttribute2,@ExtensionAttribute3,@ExtensionAttribute4,@ExtensionAttribute5,@HouseNumber,@MessageID,@MessageDateTime,@MessageReason,@MessageStatusID,@MessageStatusDateTime,@MessageTargetID,@MessageText,@MessageType,@Publication,@Route,@SpecialInstructions,@State,@StreetDirection,@StreetName,@StreetType,@SubscriberAccountNumber,@SubscriberName,@SubscriberPhone,@Zip,@Zone,@SDM_IsActive,@SDM_LastUpdated,@SDM_samAccountName
+while @@fetch_status = 0
+begin
+	if @counter = 0
+	begin 
+	select @prev_AddressConcat = @AddressConcat,
+		@prev_ApartmentNumber = @ApartmentNumber,
+		@prev_City = @City,
+		@prev_Company = @Company,
+		@prev_DistributionCenter = @DistributionCenter,
+		@prev_District = @District,
+		@prev_ExtensionAttribute1 = @ExtensionAttribute1,
+		@prev_ExtensionAttribute2 = @ExtensionAttribute2,
+		@prev_ExtensionAttribute3 = @ExtensionAttribute3,
+		@prev_ExtensionAttribute4 = @ExtensionAttribute4,
+		@prev_ExtensionAttribute5 = @ExtensionAttribute5,
+		@prev_HouseNumber = @HouseNumber,
+		@prev_MessageID = @MessageID,
+		@prev_MessageDateTime = @MessageDateTime,
+		@prev_MessageReason = @MessageReason,
+		@prev_MessageStatusID = @MessageStatusID,
+		@prev_MessageStatusDateTime = @MessageStatusDateTime,
+		@prev_MessageTargetID = @MessageTargetID,
+		@prev_MessageText = @MessageText,
+		@prev_MessageType = @MessageType,
+		@prev_Publication = @Publication,
+		@prev_Route = @Route,
+		@prev_SpecialInstructions = @SpecialInstructions,
+		@prev_State = @State,
+		@prev_StreetDirection = @StreetDirection,
+		@prev_StreetName = @StreetName,
+		@prev_StreetType = @StreetType,
+		@prev_SubscriberAccountNumber = @SubscriberAccountNumber,
+		@prev_SubscriberName = @SubscriberName,
+		@prev_SubscriberPhone = @SubscriberPhone,
+		@prev_Zip = @Zip,
+		@prev_Zone = @Zone,
+		@prev_SDM_IsActive = @SDM_IsActive,
+		@prev_SDM_LastUpdated = @SDM_LastUpdated,
+		@prev_SDM_samAccountName = @SDM_samAccountName
+	end
+
+	insert into demessage (AddressConcat,ApartmentNumber,City,Company,DistributionCenter,District,ExtensionAttribute1,ExtensionAttribute2,ExtensionAttribute3,ExtensionAttribute4,ExtensionAttribute5,HouseNumber,MessageDateTime,MessageReason,MessageStatusID,MessageStatusDateTime,MessageTargetID,MessageText,MessageType,Publication,Route,SpecialInstructions,State,StreetDirection,StreetName,StreetType,SubscriberAccountNumber,SubscriberName,SubscriberPhone,Zip,Zone,SDM_IsActive,SDM_LastUpdated,SDM_samAccountName)
+	select @AddressConcat,@ApartmentNumber,@City,@Company,@DistributionCenter,@District,@ExtensionAttribute1,@ExtensionAttribute2,@ExtensionAttribute3,@ExtensionAttribute4,@ExtensionAttribute5,@HouseNumber,@MessageDateTime,@prev_MessageReason,@MessageStatusID,@MessageStatusDateTime,@MessageTargetID,@MessageText,@prev_MessageType,@Publication,@Route,@prev_SpecialInstructions,@State,@StreetDirection,@StreetName,@StreetType,@SubscriberAccountNumber,@SubscriberName,@SubscriberPhone,@Zip,@Zone,@SDM_IsActive,@SDM_LastUpdated,@SDM_samAccountName
+
+	if @counter <> 0
+	begin 
+	select @prev_AddressConcat = @AddressConcat,
+		@prev_ApartmentNumber = @ApartmentNumber,
+		@prev_City = @City,
+		@prev_Company = @Company,
+		@prev_DistributionCenter = @DistributionCenter,
+		@prev_District = @District,
+		@prev_ExtensionAttribute1 = @ExtensionAttribute1,
+		@prev_ExtensionAttribute2 = @ExtensionAttribute2,
+		@prev_ExtensionAttribute3 = @ExtensionAttribute3,
+		@prev_ExtensionAttribute4 = @ExtensionAttribute4,
+		@prev_ExtensionAttribute5 = @ExtensionAttribute5,
+		@prev_HouseNumber = @HouseNumber,
+		@prev_MessageID = @MessageID,
+		@prev_MessageDateTime = @MessageDateTime,
+		@prev_MessageReason = @MessageReason,
+		@prev_MessageStatusID = @MessageStatusID,
+		@prev_MessageStatusDateTime = @MessageStatusDateTime,
+		@prev_MessageTargetID = @MessageTargetID,
+		@prev_MessageText = @MessageText,
+		@prev_MessageType = @MessageType,
+		@prev_Publication = @Publication,
+		@prev_Route = @Route,
+		@prev_SpecialInstructions = @SpecialInstructions,
+		@prev_State = @State,
+		@prev_StreetDirection = @StreetDirection,
+		@prev_StreetName = @StreetName,
+		@prev_StreetType = @StreetType,
+		@prev_SubscriberAccountNumber = @SubscriberAccountNumber,
+		@prev_SubscriberName = @SubscriberName,
+		@prev_SubscriberPhone = @SubscriberPhone,
+		@prev_Zip = @Zip,
+		@prev_Zone = @Zone,
+		@prev_SDM_IsActive = @SDM_IsActive,
+		@prev_SDM_LastUpdated = @SDM_LastUpdated,
+		@prev_SDM_samAccountName = @SDM_samAccountName
+	end
+
+	set @counter = @counter + 1
+
+	fetch next from msg_cursor into @AddressConcat,@ApartmentNumber,@City,@Company,@DistributionCenter,@District,@ExtensionAttribute1,@ExtensionAttribute2,@ExtensionAttribute3,@ExtensionAttribute4,@ExtensionAttribute5,@HouseNumber,@MessageID,@MessageDateTime,@MessageReason,@MessageStatusID,@MessageStatusDateTime,@MessageTargetID,@MessageText,@MessageType,@Publication,@Route,@SpecialInstructions,@State,@StreetDirection,@StreetName,@StreetType,@SubscriberAccountNumber,@SubscriberName,@SubscriberPhone,@Zip,@Zone,@SDM_IsActive,@SDM_LastUpdated,@SDM_samAccountName
+end
+
+close msg_cursor
+deallocate msg_cursor
+
+select *
+from demessage
+
+rollback tran

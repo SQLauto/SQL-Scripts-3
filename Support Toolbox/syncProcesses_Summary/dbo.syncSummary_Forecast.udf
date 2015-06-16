@@ -1,0 +1,78 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[syncSummary_Forecast]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [dbo].[syncSummary_Forecast]
+GO
+
+SET ANSI_NULLS OFF
+GO
+
+SET QUOTED_IDENTIFIER OFF
+GO
+
+CREATE FUNCTION [dbo].[syncSummary_Forecast] (
+	  @startDate datetime = null
+	  , @stopDate datetime = null
+)	
+RETURNS @table TABLE
+(
+	  SyncProcess nvarchar(25)
+	, StartTime datetime
+	, StopTime datetime
+	, Status nvarchar(25)
+)
+
+AS
+/************************************************************************
+
+	$History: $
+
+*************************************************************************/
+BEGIN
+
+	set @startDate = convert(varchar,(isnull(@startDate,getdate())),1)
+	set @stopDate = convert(varchar,(isnull(@stopDate,getdate())),1) + ' 23:59:59'
+	
+	;with cteForecastStartTimes
+	as (
+		select row_number() over( order by SLTimeStamp desc ) as [ForecastId]
+			, sltimestamp as [ForecastStartTime]
+		from syncSystemLog
+		where LogMessage = 'ForecastEngine: Forecasting start'
+		--and datediff(d, sltimestamp, @startDate) = 0
+		and sltimestamp between @startDate and @stopDate
+	)
+	, cteForecastEndTimes
+	as (
+		select row_number() over( order by SLTimeStamp desc ) as [ForecastId]
+			, sltimestamp as [ForecastEndTime]
+		from syncSystemLog
+		where LogMessage = 'ForecastEngine: Forecasting start'
+		--and datediff(d, sltimestamp, @startDate) = 0
+		and sltimestamp between @startDate and @stopDate
+	)
+	, cteForecastFinalCount
+	as (
+		select row_number() over( order by SLTimeStamp desc ) as [ForecastId]
+			, replace(logmessage, 'ForecastEngine: Final count: ', '') as [ForecastFinalCount]
+		from syncSystemLog
+		where LogMessage like 'ForecastEngine: Final count: %'
+		--and datediff(d, sltimestamp, @startDate) = 0
+		and sltimestamp between @startDate and @stopDate
+	) 
+	insert into @table
+	select 'Forecast', s.ForecastStartTime, e.ForecastEndTime
+		, c.ForecastFinalCount
+		--, cast( DATEDIFF(	SECOND, s.ForecastStartTime, e.ForecastEndTime) / 3600 as varchar)
+		--+ 'h ' + 
+		--+ right('00' + cast( DATEDIFF(	SECOND, s.ForecastStartTime, e.ForecastEndTime) % 3600 / 60 as varchar), 2)
+		--+ 'm ' + 
+		--+ right('00' + cast( DATEDIFF(	SECOND, s.ForecastStartTime, e.ForecastEndTime) % 60 as varchar), 2)
+		--+ 's ' AS [Duration]
+	from cteForecastStartTimes s
+	left join cteForecastEndTimes e
+		on s.ForecastId = e.ForecastId	
+	left join cteForecastFinalCount c
+		on s.ForecastId = c.ForecastId
+	
+	RETURN
+END
+GO	

@@ -1,0 +1,71 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[syncSystemLog_Support]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [dbo].[syncSystemLog_Support]
+GO
+
+SET ANSI_NULLS OFF
+GO
+
+SET QUOTED_IDENTIFIER OFF
+GO
+
+CREATE FUNCTION [dbo].[syncSystemLog_Support] (
+	  @date nvarchar(20) = null
+	  --, @minDate datetime = null
+	  --, @maxDate datetime = null
+)	
+RETURNS @table TABLE
+(
+	  SLTimeStamp datetime
+	, LogMessage nvarchar(2048)
+)
+AS
+/************************************************************************
+
+	$History: $
+
+*************************************************************************/
+BEGIN
+
+	declare @date_1 datetime
+	declare @date_2 datetime
+
+
+	if isdate(@date) = 0
+	begin
+	select @date = case @date
+			when 'Today' then convert(nvarchar, getdate(), 1)
+			when 'Yesterday' then convert(nvarchar, dateadd(d, -1, getdate()), 1)
+			end
+	end
+
+/*
+	if isdate(@date) = 0
+	begin 
+		select @minDate = case @date
+			when 'Today' then convert(nvarchar, getdate(), 1)
+			when 'Yesterday' then convert(nvarchar, dateadd(d, -1, getdate()), 1)
+			end
+			, @maxDate = case @date
+			when 'Today' then convert(varchar, getdate(), 1) + ' 23:59:59'
+			when 'Yesterday' then convert(varchar, dateadd(d, -1, getdate()), 1) + ' 23:59:59'
+			end
+			
+	end
+	else
+	begin
+		
+	end
+*/
+	
+	insert into @table
+	select SLTimeStamp, LogMessage
+	from syncSystemLog
+	where datediff(d, SLTimeStamp, isnull(@date, getdate())) = 0
+	order by SLTimeStamp desc
+	
+	RETURN
+END
+GO	
+
+select *
+from dbo.syncsystemLog_Support('Today')

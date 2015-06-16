@@ -1,0 +1,69 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[syncSummary_DataEntry]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [dbo].[syncSummary_DataEntry]
+GO
+
+SET ANSI_NULLS OFF
+GO
+
+SET QUOTED_IDENTIFIER OFF
+GO
+
+CREATE FUNCTION [dbo].[syncSummary_DataEntry] (
+	  @startDate datetime = null
+	  , @stopDate datetime = null
+)	
+RETURNS @table TABLE
+(
+	  SyncProcess nvarchar(25)
+	, StartTime datetime
+	, StopTime datetime
+	, Status nvarchar(100)
+)
+
+AS
+/************************************************************************
+
+	$History: $
+
+*************************************************************************/
+BEGIN
+
+	set @startDate = convert(varchar,(isnull(@startDate,getdate())),1)
+	set @stopDate = convert(varchar,(isnull(@stopDate,getdate())),1) + ' 23:59:59'
+	
+	insert into @table
+	select 'DataEntry'
+		, dateadd(
+			minute
+			, -14
+			, ( dateadd(
+					minute
+					, -1 * datediff(minute, 0, [Date]) % 15
+					, dateadd(minute, datediff(minute, 0, [Date]), 0)
+					) 
+				) )  
+			, dateadd(minute, -1 * datediff(minute, 0, [Date]) % 15, dateadd(minute, datediff(minute, 0, [Date]), 0)) 
+		, cast(count(*) as varchar) + ' Ret/Adj Audit Records'
+	from (
+		select RetAuditDate as [Date]
+		from scReturnsAudit
+		where RetAuditDate between @startDate and @stopDate
+		--where datediff(d, RetAuditDate, @date) = 0
+		union all 
+		select AdjAuditDate
+		from scDrawAdjustmentsAudit
+		where AdjAuditDate between @startDate and @stopDate
+		--where datediff(d, AdjAuditDate, @date) = 0
+		) as tmp
+	group by dateadd(minute, -1 * datediff(minute, 0, [Date]) % 15, dateadd(minute, datediff(minute, 0, [Date]), 0))
+	order by 1 desc
+		
+
+	
+	RETURN
+END
+GO	
+
+
+select *
+from [syncSummary_DataEntry](getdate(),getdate())

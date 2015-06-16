@@ -1,0 +1,25 @@
+declare @code nvarchar(25)
+
+set @code = '474426RZ'
+
+select AcctCode, 'Account', null
+from scAccounts a
+left join scChildAccounts ca
+	on a.AccountID = ca.ChildAccountID
+where ca.AccountID is null
+and a.AcctCode = @code
+union all
+select a.AcctCode, 'Child Account', r.RollupCode
+from scAccounts a
+join scChildAccounts ca
+	on a.AccountID = ca.ChildAccountID
+join scRollups r
+	on ca.AccountID = r.RollupID
+where a.AcctCode = @code
+union all 
+select r.RollupCode, 'Rollup', cast( COUNT(*) as varchar) as [Children]
+from scRollups r
+join scChildAccounts ca 
+	on r.RollupID = ca.AccountID
+where r.RollupCode = @code	
+group by r.RollupCode	

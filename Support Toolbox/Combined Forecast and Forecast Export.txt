@@ -1,0 +1,65 @@
+
+--| declarations
+declare @forecastRunning bit
+declare @msg varchar(256)
+declare @delay_seconds int
+declare @delay nvarchar(8)
+declare @beginDateOffset_RelativeToRunOnDay int
+declare @endDateOffset_RelativeToRunOnDay int
+declare @runonday varchar(9)	--| Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|null
+declare @exportType varchar(9)	--| Return|Adjustment|Forecast|Custom|Invoice
+declare @pathToConfigFile nvarchar(1000)
+declare @configFile nvarchar(100)
+declare @pubFrequency int
+--declare @delay_seconds int
+
+
+--| set variables
+set @beginDateOffset_RelativeToRunOnDay = 3
+set @endDateOffset_RelativeToRunOnDay = 9
+set @exportType = 'Forecast'
+set @configFile = 'WeeklyForecastExport.xml'
+set @pathToConfigFile = 'E:\Program Files (x86)\Syncronex\SingleCopy\DataIO\nsdb_ajc'
+set @runonday = 'Wednesday'
+set @pubFrequency = 64
+
+
+--|forecast running?
+select @forecastRunning = AttributeValue
+from merc_ControlPanel
+where AppLayer = 'ForecastEngine'
+and AttributeName = 'EngineLock'
+
+set @delay_seconds = 300
+
+set @delay = convert(varchar, dateadd(ms, @delay_seconds*1000,0), 114)
+print @delay
+
+while @forecastRunning = 1
+begin
+	set @msg = 'Waiting for forecast execution to complete before exporting... checking status in  ' 
+		+ cast(
+		( @delay_seconds ) / 3600  as varchar )
+		+ 'h ' + 
+		cast(
+		( @delay_seconds % 3600 ) / 60 as varchar )
+		+ 'm ' +
+		cast(
+		( @delay_seconds % 60 ) as varchar )
+		+ 's '
+	exec syncSystemLog_Insert @moduleId=2,@SeverityId=0,@CompanyId=1,@Message=@msg
+	--print @msg
+	
+	waitfor delay @delay
+
+	select @forecastRunning = AttributeValue
+	from merc_ControlPanel
+	where AppLayer = 'ForecastEngine'
+	and AttributeName = 'EngineLock'
+end
+
+set @delay_seconds = 15
+
+--| run the export
+exec support_ForecastExportScheduler @beginDateOffset_RelativeToRunOnDay, @endDateOffset_RelativeToRunOnDay, @runonday, @pubFrequency, @exportType, @pathToConfigFile, @configFile, @delay_seconds
+

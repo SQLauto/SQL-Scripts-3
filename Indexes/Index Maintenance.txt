@@ -1,0 +1,24 @@
+Indexes
+
+Targeted Index Maintenance
+ - reorganize any index where avg_fragmentation_in_percent is below 30% 
+ - rebuilding any index where avg_fragmentation_in_percent is over 30%
+	- online/offline?
+
+ - rebuild associated non-clustered indexes (keyword all)?  When do we want to do this?
+
+
+
+Other:
+
+ - Index usage stats
+ - missing indexes
+
+
+
+Index Reads vs Writes?
+
+
+
+
+use 'including' when creating clustered indexes

@@ -1,0 +1,44 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[support_AccountOrRollup]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [dbo].[support_AccountOrRollup]
+GO
+
+CREATE FUNCTION [dbo].[support_AccountOrRollup](
+	@code	nvarchar(25)
+)
+RETURNS @data TABLE( 
+	Id int
+	, Code nvarchar(25)
+	, [Type] nvarchar(13)
+	, Children int
+	, Imported int
+ )
+AS
+BEGIN
+	insert @data
+	select a.AccountId as [Id], AcctCode as [Code], 'Account' as [Type], null as [Children], AcctImported as [Imported]
+	from scAccounts a
+	left join scChildAccounts ca
+		on a.AccountID = ca.ChildAccountID
+	where ca.AccountID is null
+	and a.AcctCode = @code
+	union all
+	select a.AccountId, a.AcctCode, 'Child Account', r.RollupCode, a.AcctImported
+	from scAccounts a
+	join scChildAccounts ca
+		on a.AccountID = ca.ChildAccountID
+	join scRollups r
+		on ca.AccountID = r.RollupID
+	where a.AcctCode = @code
+	union all 
+	select r.RollupId, r.RollupCode, 'Rollup', cast( COUNT(*) as varchar) as [Children], r.RollupImported
+	from scRollups r
+	join scChildAccounts ca 
+		on r.RollupID = ca.AccountID
+	where r.RollupCode = @code	
+	group by r.RollupId, r.RollupCode, r.RollupImported		
+	return
+END
+GO
+
+select *
+from dbo.support_AccountOrRollup('R70953')

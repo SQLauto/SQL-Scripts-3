@@ -1,0 +1,1 @@
+	exec syncSystemLog_Insert @ModuleId=2, @Severity=0, @CompanyId=1, @Message=@msg

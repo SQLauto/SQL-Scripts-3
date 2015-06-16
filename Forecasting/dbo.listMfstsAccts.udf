@@ -1,0 +1,92 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[listMfstsAccts]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [dbo].[listMfstsAccts]
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE FUNCTION [dbo].[listMfstsAccts] (
+		@manifestType nvarchar(80) = null
+		, @mfst nvarchar(20) = null
+		, @acct nvarchar(20) = null
+		, @pub int = -1
+		, @frequency int = null
+	)
+
+RETURNS @list  TABLE
+(
+	AccountId int
+	, AcctCode nvarchar(20)
+	, PublicationId int
+	, PubShortName nvarchar(5) 
+	, MfstCode nvarchar(20)
+	, ManifestTypeId int
+	, ManifestTypeDescription nvarchar(80)
+	, ManifestOwner int
+	, Frequency int
+)
+AS
+/*
+
+*/
+BEGIN
+
+	insert into @list
+	select 
+		  a.AccountId
+		, a.AcctCode
+		, p.PublicationId
+		, p.PubShortName
+		, mt.MTCode
+		, mt.ManifestTypeId
+		, typ.ManifestTypeDescription
+		, mt.MTOwner
+		, mst.Frequency
+	from scManifestTemplates mt
+	join scManifestSequenceTemplates mst
+		on mt.ManifestTemplateId = mst.ManifestTemplateId
+	join scManifestSequenceItems msi
+		on mst.ManifestSequenceTemplateId = msi.ManifestSequenceTemplateId
+	join scAccountsPubs ap
+		on msi.AccountPubId = ap.AccountPubId
+	join scAccounts a
+		on ap.AccountId = a.AccountId
+	join nsPublications p
+		on ap.PublicationId = p.PublicationId
+	join dd_scManifestTypes typ
+		on mt.ManifestTypeId = typ.ManifestTypeId	
+	where ( 
+			( @manifestType is null and mt.ManifestTemplateId > 0 )
+			or 
+			( @manifestType is not null and typ.ManifestTypeDescription = @manifestType )
+		)
+	and (
+			( @mfst is null and mt.ManifestTemplateId > 0 )
+			or
+			( @mfst is not null and mt.MTCode = @mfst )
+		)	
+	and	(
+			( @acct is null and a.AccountID > 0 )
+			or 
+			( @acct is not null and a.AcctCode = @acct )
+		)
+	and ( 
+			--( @pub is null and p.PublicationId > 0 )
+			--or 
+			--( @pub is not null and p.PubShortName = @pub )
+			( @pub = -1 and p.PublicationId > 0 )
+			or 
+			( @pub > 0 and p.PublicationId = @pub )
+		)
+	and (
+		( @frequency is null and mst.ManifestTemplateId > 0 )
+		or 
+		( @frequency is not null and ( @frequency & mst.Frequency > 0 ) )
+		)
+			
+	order by a.AcctCode, p.PubShortName
+
+	RETURN	
+END	

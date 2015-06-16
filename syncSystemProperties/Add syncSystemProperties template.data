@@ -1,0 +1,40 @@
+/*
+	syncSystemProperties_019.data
+
+		Add WebAllowDecrementedReturns property to System Configuration
+ 
+	$History: $
+*/
+
+declare @sysPropertyName nvarchar(50)
+declare @sysPropertyValue nvarchar(512)
+declare @sysPropertyDescription nvarchar(128)
+set @sysPropertyName = 'WebAllowDecrementedReturns' 
+set @sysPropertyValue = 'True'  --|[True|False]
+set @sysPropertyDescription = 'Allow users to reduce Return values'
+
+if exists (
+	select 1 from syncSystemProperties where SysPropertyName = @sysPropertyName 
+)
+begin 
+	update syncSystemProperties
+	set SysPropertyValue = @sysPropertyValue
+	where SysPropertyName = @sysPropertyName
+end
+else
+begin
+	insert into syncSystemProperties (
+		  [SystemPropertyId]
+		, [SysPropertyName]
+		, [SysPropertyDescription]
+		, [SysPropertyValue]
+		, [Display]
+		)
+	select 
+		  max(SystemPropertyId) + 1
+	   ,  @sysPropertyName
+	   ,  @sysPropertyDescription
+	   ,  @sysPropertyValue
+	   ,  1
+	from dbo.syncSystemProperties
+end

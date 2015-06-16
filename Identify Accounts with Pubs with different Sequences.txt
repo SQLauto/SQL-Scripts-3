@@ -1,0 +1,47 @@
+begin tran
+
+update scmanifestsequences
+set sequence = 170
+where manifestsequenceid = 7718754
+
+	select distinct accountid, sequence
+	into #accts
+	from scmanifests m
+	join scmanifestsequences ms
+		on m.manifestid = ms.manifestid
+	join scaccountspubs ap
+		on ms.accountpubid = ap.accountpubid
+--/*
+	where mfstcode = '601c'
+	and datediff(d, manifestdate, '5/14/2009') = 0
+--*/
+
+
+	select accountid
+	from #accts
+	group by accountid
+	having count(*) > 1
+
+
+	select ms.manifestsequenceid, m.mfstname, mst.code, a.acctname, a.acctcode, p.pubshortname, sequence
+		from scmanifests m
+	join scmanifestsequences ms
+		on m.manifestid = ms.manifestid
+	join scaccountspubs ap
+		on ms.accountpubid = ap.accountpubid
+	join scaccounts a
+		on ap.accountid = a.accountid
+	join scmanifestsequencetemplates mst
+		on ms.manifestsequencetemplateid = mst.manifestsequencetemplateid
+	join nspublications p	
+		on ap.publicationid = p.publicationid
+	where a.accountid in (
+		select accountid
+		from #accts
+		group by accountid
+		having count(*) > 1
+	)
+	and mfstcode = '601c'
+	and datediff(d, manifestdate, '5/14/2009') = 0
+
+commit tran

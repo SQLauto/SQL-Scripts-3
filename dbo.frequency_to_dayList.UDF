@@ -1,0 +1,97 @@
+IF OBJECT_ID (N'dbo.frequency_to_dayList') IS NOT NULL
+   DROP FUNCTION dbo.frequency_to_dayList
+GO
+
+CREATE FUNCTION dbo.frequency_to_dayList (@frequency int)
+
+RETURNS nvarchar(33)
+WITH EXECUTE AS CALLER
+AS
+BEGIN
+	declare @dayList nvarchar(33)
+	set @dayList = null
+
+	set @dayList = 
+		case 
+			when @frequency & 1 > 0 then 'SUN'
+			else ''
+		end
+		 + 
+		case 
+			when @frequency & 2 > 0 then 
+										case 
+											when @frequency & 1 > 0 then ', MON'
+											else 'MON'
+										end								
+			else ''										
+		end
+		 + 
+		case 
+			when @frequency & 4 > 0 then 
+										case 
+											when ( @frequency & 1 > 0 )
+												 OR ( @frequency & 2 > 0 )
+												 then ', TUE'
+											else 'TUE'
+										end
+			else ''															
+		end	
+		 + 
+		case 
+			when @frequency & 8 > 0 then 
+										case 
+											when ( @frequency & 1 > 0 )
+												 OR ( @frequency & 2 > 0 )
+												 OR ( @frequency & 4 > 0 )
+												 then ', WED'
+											else 'WED'
+										end	
+			else ''														
+		end	
+		 + 
+		case 
+			when @frequency & 16 > 0 then 
+										case 
+											when ( @frequency & 1 > 0 )
+												 OR ( @frequency & 2 > 0 )
+												 OR ( @frequency & 4 > 0 )
+												 OR ( @frequency & 8 > 0 )
+												 then ', THU'
+											else 'THU'
+										end	
+			else ''														
+		end			
+		 + 
+		case 
+			when @frequency & 32 > 0 then 
+										case 
+											when ( @frequency & 1 > 0 )
+												 OR ( @frequency & 2 > 0 )
+												 OR ( @frequency & 4 > 0 )
+												 OR ( @frequency & 8 > 0 )
+												 OR ( @frequency & 16 > 0 )
+												 then ', FRI'
+											else 'FRI'
+										end	
+			else ''														
+		end
+		 + 
+		case 
+			when @frequency & 64 > 0 then 
+										case 
+											when ( @frequency & 1 > 0 )
+												 OR ( @frequency & 2 > 0 )
+												 OR ( @frequency & 4 > 0 )
+												 OR ( @frequency & 8 > 0 )
+												 OR ( @frequency & 16 > 0 )
+												 OR ( @frequency & 32 > 0 )
+												 then ', SAT'
+											else 'SAT'
+										end	
+			else ''														
+		end
+
+     RETURN(@dayList)
+END
+GO
+

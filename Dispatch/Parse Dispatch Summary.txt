@@ -1,0 +1,40 @@
+
+/*
+select sdm_syslogdatetime
+	--, sdm_syslogmessage
+	--, charindex( 'Dispatch erroRSDispatchList:', sdm_syslogmessage, 0 ) - ( charindex( 'Dispatched OK: ', sdm_syslogmessage, 0 ) + len('Dispatched OK: ') )
+	, 'Notify.exe'
+	, substring(
+			sdm_syslogmessage, charindex( 'Dispatched OK: ', sdm_syslogmessage, 0 ) + len('Dispatched OK: ')
+			, charindex( 'Dispatch erroRSDispatchList:', sdm_syslogmessage, 0 ) - ( charindex( 'Dispatched OK: ', sdm_syslogmessage, 0 ) + len('Dispatched OK: ') )
+		) as [Dispatched]
+from nslogsystem
+where datediff(d, sdm_syslogdatetime, getdate()) = 0
+and sdm_syslogmessage like 'notify.exe%'
+--and sdm_syslogmessage like '%rpepe@njmg.com%'
+
+union all
+*/
+
+
+select sdm_syslogdatetime
+	, substring(
+			sdm_syslogmessage, charindex( 'Pending: ', sdm_syslogmessage, 0 ) + len('Pending: ')
+			, charindex( ', Dispatched', sdm_syslogmessage, 0 ) - ( charindex( 'Pending: ', sdm_syslogmessage, 0 ) + len('Pending: ') )
+		) as [Pending]
+	, substring(
+			sdm_syslogmessage, charindex( 'Dispatched: ', sdm_syslogmessage, 0 ) + len('Dispatched: ')
+			, charindex( ', Errors', sdm_syslogmessage, 0 ) - ( charindex( 'Dispatched: ', sdm_syslogmessage, 0 ) + len('Dispatched: ') )
+		) as [Dispatched]
+	, substring(
+			sdm_syslogmessage, charindex( 'Errors: ', sdm_syslogmessage, 0 ) + len('Errors: ')
+			, charindex( ', No Login', sdm_syslogmessage, 0 ) - ( charindex( 'Errors: ', sdm_syslogmessage, 0 ) + len('Errors: ') )
+		) as [Errors]
+	, 'Notify_1_5_Multi-Provider.exe'
+	, sdm_syslogmessage
+from nslogsystem
+where datediff(d, sdm_syslogdatetime, getdate()) = 0
+and sdm_syslogmessage like '%multi%'
+and sdm_syslogmessage like '%DISPATCH SUMMARY%'
+order by 1 desc
+--Notify.exe (INFO).    DISPATCH SUMMARY  Msgs pending: 0  Dispatched OK: 0  Dispatch erroRSDispatchList: 0  Message target not in SDMConfig..Logins: 0  SubscriberID missing from SDMConfig..Logins: 0  

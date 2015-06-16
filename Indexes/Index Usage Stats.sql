@@ -1,0 +1,14 @@
+
+
+SELECT   DB_NAME() AS DATABASENAME, 
+         OBJECT_NAME(B.OBJECT_ID) AS TABLENAME, 
+         B.NAME AS INDEXNAME, 
+         B.INDEX_ID 
+         , c.*
+FROM     SYS.OBJECTS A 
+INNER JOIN SYS.INDEXES B 
+	ON A.OBJECT_ID = B.OBJECT_ID 
+join SYS.DM_DB_INDEX_USAGE_STATS C 
+	on B.OBJECT_ID = C.OBJECT_ID 
+    AND B.INDEX_ID = C.INDEX_ID	
+where object_name(a.Object_id) = 'scDrawHistory'

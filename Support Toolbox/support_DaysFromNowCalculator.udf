@@ -1,0 +1,54 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[support_DaysFromNowCalculator]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [dbo].[support_DaysFromNowCalculator]
+GO
+
+CREATE FUNCTION [dbo].[support_DaysFromNowCalculator]
+(
+    @StartDate DateTime, 
+    @EndDate DateTime,
+    @Today datetime
+    
+)
+RETURNS @DateRangeList TABLE 
+(
+    [Date] DateTime NOT NULL
+    ,DaysFromNow int not null
+)
+AS 
+BEGIN
+    IF @StartDate > @EndDate
+    BEGIN
+        --Unfortunately you cannot raise an error in a UDF so simply return no rows
+        RETURN
+    END;
+
+    WITH DateRange(Date,DaysFromNow)
+    AS
+    (
+        SELECT
+            @StartDate Date
+            , datediff(d, @Today, @startDate) as 'DaysFromNow'
+        UNION ALL
+        SELECT
+            DATEADD(day, 1, Date) Date
+            , datediff(d, @Today, DATEADD(day, 1, Date)) as 'DaysFromNow'
+        FROM
+            DateRange
+        WHERE
+            Date < @EndDate
+    )
+
+    INSERT @DateRangeList
+    SELECT Date, DaysFromNow
+    FROM DateRange
+    --You could remove Maximum Recursion level constraint by specifying a MaxRecusion of zero
+    OPTION (MaxRecursion 10000);
+
+    RETURN
+
+END;
+GO
+
+select * 
+from dbo.support_DaysFromNowCalculator('1/30/2012', '2/5/2012', getdate())
+GO

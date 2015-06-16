@@ -1,0 +1,28 @@
+/****** Object:  Table [dbo].[scManifestLoad]    Script Date: 2/7/2005 9:30:18 AM ******/
+if exists (select * from dbo.sysobjects where id = object_id(N'[dbo].[scManifestLoad]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
+drop table [dbo].[scManifestLoad]
+GO
+
+CREATE TABLE [dbo].[scManifestLoad] (
+	[MfstCode]			[char] (20)		NULL ,
+	[TruckName]			[char] (50)	NULL ,
+	[AcctCode]			[char] (20)		NULL ,
+	[AcctName]			[char] (50)	NULL ,
+	[AcctCity]			[char] (50)		NULL ,
+	[AcctAddress]		[char] (128)	NULL ,
+	[AcctState]			[char] (5)		NULL ,
+	[AcctZip]			[char] (15)		NULL ,
+	[LocationSeq]		[char] (5)		NULL ,
+	[LocationType]		[char] (5)		NULL ,
+	[LocationCat]		[char] (5)		NULL ,
+	[PubShortName]		[char] (5)		NULL ,
+	[Date]				[char] (10)		NULL ,
+	[Draw]				[char] (10)		NULL ,
+	[RollupAcct]		[char] (1)		NULL
+) ON [PRIMARY]
+GO
+
+GRANT  SELECT ,  UPDATE ,  INSERT ,  DELETE  ON [dbo].[scManifestLoad]  TO [nsUser]
+GO
+
+

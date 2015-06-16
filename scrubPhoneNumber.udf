@@ -1,0 +1,36 @@
+
+
+CREATE FUNCTION [scrubPhoneNumber] (  
+	@input varchar(255)
+)
+returns varchar(255)
+as
+begin
+	 
+	declare @output varchar(100) 
+	
+	set @output = @input
+
+	;with cte as
+	(
+		select '-' as item
+		union all 
+		select '.' as item
+		union all 
+		select '(' as item
+		union all 
+		select ')' as item
+	)
+	select @output = Replace(@output, item, '') 
+	from cte  
+	
+	return @output 
+end
+GO
+	
+select dbo.scrubPhoneNumber('801-555-1512')
+go
+
+	
+select dbo.scrubPhoneNumber('(801) 555-1512.')
+go

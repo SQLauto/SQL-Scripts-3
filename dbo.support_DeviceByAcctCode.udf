@@ -1,0 +1,66 @@
+
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[support_DeviceByAcctCode]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [dbo].[support_DeviceByAcctCode]
+GO
+
+SET ANSI_NULLS OFF
+GO
+
+SET QUOTED_IDENTIFIER OFF
+GO
+
+CREATE FUNCTION [dbo].[support_DeviceByAcctCode] (
+	  @acctCode nvarchar(20)
+	, @frequency int = 127
+)	
+RETURNS @table TABLE
+(
+	  AccountId int
+	, AcctCode nvarchar(20)
+	, ManifestTemplateId int
+	, MTCode nvarchar(20)
+	, Frequency int
+	, MSTCode nvarchar(20)
+	, DeviceId int
+	, DeviceCode nvarchar(20)
+	, UserName nvarchar(255)
+)
+
+AS
+/************************************************************************
+
+	$History: $
+
+*************************************************************************/
+BEGIN
+
+
+	insert into @table
+	--|device audit - by account
+	select distinct a.AccountID, a.AcctCode, mt.ManifestTemplateId, mt.MTCode, mst.Frequency, mst.Code, d.DeviceId, d.DeviceCode, u.UserName
+	from scManifestTemplates mt
+	join scManifestSequenceTemplates mst
+		on mt.ManifestTemplateId = mst.ManifestTemplateId
+	join scManifestSequenceItems msi
+		on mst.ManifestSequenceTemplateId = msi.ManifestSequenceTemplateId
+	join scAccountsPubs ap
+		on msi.AccountPubId = ap.AccountPubID
+	join scAccounts a
+		on ap.AccountId = a.AccountID
+	join nsDevices d
+		on mt.DeviceId = d.DeviceId	
+	join nsDevicesUsers du
+		on d.DeviceId = du.DeviceID
+	join Users u
+		on du.UserId = u.UserID		
+	where a.AcctCode = @acctCode
+	and mst.Frequency & @frequency > 0
+
+
+	RETURN
+END
+GO	
+
+select *
+from dbo.support_devicebyacctcode( '00123705', 127 )
+GO

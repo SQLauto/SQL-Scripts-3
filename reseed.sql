@@ -1,0 +1,1 @@
+dbcc checkident ('dd_nsDeviceTypes', reseed, 1) 

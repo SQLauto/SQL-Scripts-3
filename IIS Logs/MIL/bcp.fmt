@@ -1,0 +1,18 @@
+10.0
+16
+1       SQLCHAR             2       8000    ""   1     DATE                       SQL_Latin1_General_CP1_CI_AS
+2       SQLCHAR             2       8000    ""   2     TIME                       SQL_Latin1_General_CP1_CI_AS
+3       SQLCHAR             2       8000    ""   3     Col003                     SQL_Latin1_General_CP1_CI_AS
+4       SQLCHAR             2       8000    ""   4     Col004                     SQL_Latin1_General_CP1_CI_AS
+5       SQLCHAR             2       8000    ""   5     METHOD                     SQL_Latin1_General_CP1_CI_AS
+6       SQLCHAR             2       8000    ""   6     PAGE                       SQL_Latin1_General_CP1_CI_AS
+7       SQLCHAR             2       8000    ""   7     QUERYSTRING                SQL_Latin1_General_CP1_CI_AS
+8       SQLCHAR             2       8000    ""   8     PORT                       SQL_Latin1_General_CP1_CI_AS
+9       SQLCHAR             2       8000    ""   9     Col009                     SQL_Latin1_General_CP1_CI_AS
+10      SQLCHAR             2       8000    ""   10    IP                         SQL_Latin1_General_CP1_CI_AS
+11      SQLCHAR             2       8000    ""   11    RESPONSE                   SQL_Latin1_General_CP1_CI_AS
+12      SQLCHAR             2       8000    ""   12    Col012                     SQL_Latin1_General_CP1_CI_AS
+13      SQLCHAR             2       8000    ""   13    Col013                     SQL_Latin1_General_CP1_CI_AS
+14      SQLCHAR             2       8000    ""   14    Col014                     SQL_Latin1_General_CP1_CI_AS
+15      SQLCHAR             2       8000    ""   15    Col015                     SQL_Latin1_General_CP1_CI_AS
+16      SQLCHAR             2       8000    ""   16    Col016                     SQL_Latin1_General_CP1_CI_AS

@@ -1,0 +1,41 @@
+begin tran
+
+select AcctCode
+	--, typ.ATName
+	, PubShortName
+	, SUM(AllowForecasting) as [# of days Forecasting Allowed]
+--	, drawweekday
+	--, case DrawWeekDay
+	--	when 1 then 'Sun'
+	--	when 2 then 'Mon'
+	--	when 3 then 'Tue'
+	--	when 4 then 'Wed'
+	--	when 5 then 'Thu'
+	--	when 6 then 'Fri'
+	--	when 7 then 'Sat'
+	--	end as [day]
+	--, convert(varchar, ap.DeliveryStopDate, 1) + ' - ' + convert(varchar, ap.DeliveryStartDate, 1) as [DeliveryStopRange]
+--	, dd.AllowForecasting
+--	, acctactive as [acct active]	
+--	, ap.active as [pub active]
+from scAccounts a
+join dd_scAccountTypes typ
+	on a.AccountTypeId = typ.AccountTypeId
+join scaccountspubs ap
+	on a.accountid = ap.accountid
+join nspublications p
+	on ap.publicationid = p.publicationid
+join scdefaultdraws dd
+	on ap.accountid = dd.accountid
+	and ap.publicationid = dd.publicationid
+where 
+--and drawweekday not in (1, 7)
+    active = 1
+and acctactive = 1
+--and drawamount < 3
+
+group by AcctCode, PubShortName
+having SUM(allowforecasting) < 7
+order by acctcode
+
+rollback  tran

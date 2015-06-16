@@ -1,0 +1,61 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[support_FrequencyDayList]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [dbo].[support_FrequencyDayList]
+GO
+
+SET ANSI_NULLS OFF
+GO
+
+SET QUOTED_IDENTIFIER OFF
+GO
+
+CREATE FUNCTION [dbo].[support_FrequencyDayList] (
+)	
+RETURNS @table TABLE
+(
+	Frequency int
+	,DayList nvarchar(35)
+	,SortOrder int
+)
+
+AS
+/************************************************************************
+
+	$History: $
+
+*************************************************************************/
+BEGIN
+
+;with cteFrequencies 
+as (
+	select 1 as num
+		, dbo.support_DayNames_FromFrequency(1) as [DayList]
+		, len((dbo.support_DayNames_FromFrequency(1))) as [Length]
+		, 1 as [SundayFirstSortOrder]
+	union all 
+	select num + 1 
+		, dbo.support_DayNames_FromFrequency(num + 1) as [DayList]
+		, len((dbo.support_DayNames_FromFrequency(num + 1))) as [Length]
+		, case 
+			when (num + 1) & 1 > 0 then 1
+			when (num + 1) & 2 > 0 then 2
+			when (num + 1) & 4 > 0 then 3
+			when (num + 1) & 8 > 0 then 4
+			when (num + 1) & 16 > 0 then 5
+			when (num + 1) & 32 > 0 then 6
+			when (num + 1) & 64 > 0 then 7
+			END as [SundayFirstSortOrder]	
+	from cteFrequencies
+	where num + 1 < 127
+	
+)
+	insert into @table
+	select num as [Frequency], DayList
+		, row_number() over ( order by [Length], SundayFirstSortOrder, [num]	) as [SortOrder]
+	from cteFrequencies cte
+	order by 3 
+	option (maxrecursion 127)
+
+	RETURN
+END
+GO	
+

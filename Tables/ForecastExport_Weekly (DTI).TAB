@@ -1,0 +1,15 @@
+
+create table dbo.support_ForecastExport
+(
+	Code nvarchar(8)
+	, PubShortName nvarchar(4)
+	, StartDate nvarchar(6)
+	, Filler nvarchar(8)
+	, DrawAmount0 nvarchar(4)
+	, DrawAmount1 nvarchar(4)
+	, DrawAmount2 nvarchar(4)
+	, DrawAmount3 nvarchar(4)
+	, DrawAmount4 nvarchar(4)
+	, DrawAmount5 nvarchar(4)
+	, DrawAmount6 nvarchar(4)
+)

@@ -1,0 +1,16 @@
+
+;WITH DateRange(Date,DaysFromNow)
+    AS
+    (
+        SELECT
+            @StartDate Date
+            , datediff(d, GETDATE(), @startDate) as 'DaysFromNow'
+        UNION ALL
+        SELECT
+            DATEADD(day, 1, Date) Date
+            , datediff(d, GETDATE(), DATEADD(day, 1, Date)) as 'DaysFromNow'
+        FROM
+            DateRange
+        WHERE
+            Date < @EndDate
+    )

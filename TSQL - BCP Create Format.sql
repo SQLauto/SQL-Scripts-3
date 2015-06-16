@@ -1,0 +1,1 @@
+bcp nsdb_ric..bcpSales format nul -n -f C:\Inetpub\Syncronex\ric\out\bcpSales.fmt -S MGSYNCRONEX1 -U nsadmin -P nsadmin -T

@@ -1,0 +1,277 @@
+begin tran
+
+
+	select d.DrawId, dups.*
+	into #dups
+	from scDraws d
+	join (
+		select CompanyID, DistributionCenterID, AccountID, PublicationID, DrawWeekday, DrawDate, DrawAmount, DrawRate, DeliveryDate
+		from scdraws d
+		where d.drawdate in ( 
+			  '2/3/2013'
+			,  '2/10/2013'
+		)
+		group by CompanyID, DistributionCenterID, AccountID, PublicationID, DrawWeekday, DrawDate, DrawAmount, DrawRate, DeliveryDate
+		having count(*) > 1
+		--order by accountid, publicationid, drawdate desc
+	) dups
+	on d.AccountID = dups.AccountID
+	and d.PublicationID = dups.PublicationID
+	and d.DrawWeekday = dups.DrawWeekday
+	and d.DrawDate = dups.DrawDate
+	order by d.accountid, d.publicationid, d.drawdate desc
+
+--|first delete records with no associated ret or adj
+select d1.DrawId
+into #drawsToDelete
+from (
+	select  d.DrawId, d.AccountID, d.PublicationID, d.DrawWeekday, d.DrawDate
+	from scdraws d
+	left join screturns r
+		on d.drawid = r.drawid
+	left join scdrawadjustments a
+		on d.drawid = a.drawid	
+	join #dups dups
+		on d.drawid = dups.drawid
+	where ( ReturnId is null and DrawAdjustmentId is null )
+	) d1
+join (
+	select  d.DrawId, d.AccountID, d.PublicationID, d.DrawWeekday, d.DrawDate
+	from scdraws d
+	left join screturns r
+		on d.drawid = r.drawid
+	left join scdrawadjustments a
+		on d.drawid = a.drawid	
+	join #dups dups
+		on d.drawid = dups.drawid
+	where ( ReturnId is null and DrawAdjustmentId is null )
+	) d2
+on d1.AccountID = d2.AccountID
+	and d1.PublicationID = d2.PublicationID
+	and d1.DrawWeekday = d2.DrawWeekday
+	and d1.DrawDate = d2.DrawDate
+where d1.DrawId > d2.DrawId
+
+delete scDrawHistory
+from scDraws d
+join #drawsToDelete del
+	on d.DrawId = del.DrawId
+join scDrawHistory dh
+	on d.DrawId = dh.DrawId
+
+delete scDraws
+from scDraws d
+join #drawsToDelete del
+	on d.DrawId = del.DrawId
+
+drop table #dups
+go
+drop table #drawsToDelete
+go
+
+--|now delete draws that doesn't have the associated ret or adj
+
+
+select d.DrawId, dups.*
+into #dups
+from scDraws d
+join (
+	select CompanyID, DistributionCenterID, AccountID, PublicationID, DrawWeekday, DrawDate, DrawAmount, DrawRate, DeliveryDate
+	from scdraws d
+	where d.drawdate in ( 
+		  '2/3/2013'
+		,  '2/10/2013'
+	)
+	group by CompanyID, DistributionCenterID, AccountID, PublicationID, DrawWeekday, DrawDate, DrawAmount, DrawRate, DeliveryDate
+	having count(*) > 1
+	--order by accountid, publicationid, drawdate desc
+) dups
+on d.AccountID = dups.AccountID
+and d.PublicationID = dups.PublicationID
+and d.DrawWeekday = dups.DrawWeekday
+and d.DrawDate = dups.DrawDate
+order by d.accountid, d.publicationid, d.drawdate desc
+
+
+
+	select dups.DrawId, dups.AccountId, dups.PublicationId, dups.DrawDate
+
+		, case 
+				when isnull(RetAmount,0) > 0 then dups.drawid
+				else 0
+				end as [DrawToSave]
+		, case 
+				when isnull(RetAmount,0) = 0 then dups.drawid
+				else 0
+				end as [DrawToDelete]
+		--, d1.HasReturns, d1.HasAdjustments
+	into #prelim
+	from #dups dups
+	left join screturns r
+		on dups.drawid = r.drawid
+	left join scdrawadjustments a
+		on dups.drawid = a.drawid	
+	order by dups.AccountId, dups.PublicationId, dups.DrawDate
+
+
+select d.DrawToDelete as [DrawId]
+into #drawsToDelete
+from (
+	select *
+	from #prelim
+	where DrawToSave > 0 ) as s
+join (
+	select *
+	from #prelim
+	where DrawToDelete > 0 )as d
+on s.AccountId = d.AccountId
+and s.PublicationId = d.PublicationId
+and s.DrawDate = d.DrawDate
+
+delete scDrawHistory
+from scDraws d
+join #drawsToDelete del
+	on d.DrawId = del.DrawId
+join scDrawHistory dh
+	on d.DrawId = dh.DrawId
+
+delete scReturnsAudit
+from scReturnsAudit ra
+join #drawsToDelete del
+	on ra.DrawId = del.DrawId
+
+delete scReturns
+from scReturns r
+join #drawsToDelete del
+	on r.DrawId = del.DrawId
+
+delete scDrawAdjustmentsAudit
+from scDrawAdjustmentsAudit da
+join #drawsToDelete del
+	on da.DrawId = del.DrawId
+
+delete scDrawAdjustments
+from scDrawAdjustments d
+join #drawsToDelete del
+	on d.DrawId = del.DrawId
+
+delete scDraws
+from scDraws d
+join #drawsToDelete del
+	on d.DrawId = del.DrawId
+
+
+--|now delete draws that doesn't have the associated ret or adj
+drop table #dups
+go
+drop table #prelim
+go
+drop table #drawsToDelete
+go
+
+--/*
+select d.DrawId, dups.*
+	into #dups
+	from scDraws d
+	join (
+		select CompanyID, DistributionCenterID, AccountID, PublicationID, DrawWeekday, DrawDate, DrawAmount, DrawRate, DeliveryDate
+		from scdraws d
+		where d.drawdate in ( 
+			  '2/3/2013'
+			,  '2/10/2013'
+		)
+		group by CompanyID, DistributionCenterID, AccountID, PublicationID, DrawWeekday, DrawDate, DrawAmount, DrawRate, DeliveryDate
+		having count(*) > 1
+		--order by accountid, publicationid, drawdate desc
+	) dups
+	on d.AccountID = dups.AccountID
+	and d.PublicationID = dups.PublicationID
+	and d.DrawWeekday = dups.DrawWeekday
+	and d.DrawDate = dups.DrawDate
+	order by d.accountid, d.publicationid, d.drawdate desc
+--*/
+
+select d1.DrawId
+into #drawsToDelete
+from #dups d1
+join #dups d2
+	on d1.AccountId = d2.AccountId
+and d1.PublicationId = d2.PublicationId
+and d1.DrawDate = d2.DrawDate
+where d1.DrawId > d2.DrawId
+
+
+delete scDrawHistory
+from scDraws d
+join #drawsToDelete del
+	on d.DrawId = del.DrawId
+join scDrawHistory dh
+	on d.DrawId = dh.DrawId
+
+delete scReturnsAudit
+from scReturnsAudit ra
+join #drawsToDelete del
+	on ra.DrawId = del.DrawId
+
+delete scReturns
+from scReturns r
+join #drawsToDelete del
+	on r.DrawId = del.DrawId
+
+delete scDrawAdjustmentsAudit
+from scDrawAdjustmentsAudit da
+join #drawsToDelete del
+	on da.DrawId = del.DrawId
+
+delete scDrawAdjustments
+from scDrawAdjustments d
+join #drawsToDelete del
+	on d.DrawId = del.DrawId
+
+delete scDraws
+from scDraws d
+join #drawsToDelete del
+	on d.DrawId = del.DrawId
+
+
+--|now delete draws that doesn't have the associated ret or adj
+drop table #dups
+go
+drop table #drawsToDelete
+go
+
+
+select d.DrawId, dups.*
+from scDraws d
+join (
+	select CompanyID, DistributionCenterID, AccountID, PublicationID, DrawWeekday, DrawDate, DrawAmount, DrawRate, DeliveryDate
+	from scdraws d
+	where d.drawdate in ( 
+		  '2/3/2013'
+		,  '2/10/2013'
+	)
+	group by CompanyID, DistributionCenterID, AccountID, PublicationID, DrawWeekday, DrawDate, DrawAmount, DrawRate, DeliveryDate
+	having count(*) > 1
+	--order by accountid, publicationid, drawdate desc
+) dups
+on d.AccountID = dups.AccountID
+and d.PublicationID = dups.PublicationID
+and d.DrawWeekday = dups.DrawWeekday
+and d.DrawDate = dups.DrawDate
+order by d.accountid, d.publicationid, d.drawdate desc
+
+/*
+
+select  d.DrawId, d.AccountID, d.PublicationID, d.DrawWeekday, d.DrawDate, d.DrawAmount, d.DrawRate, d.DeliveryDate
+	, r.ReturnID, r.RetEntryDate, r.RetEffectiveDate, r.RetAmount, r.BillingHistoryID, r.RetExpDateTime, r.RetExportLastAmt
+	, a.DrawAdjustmentID, a.AdjEntryDate, a.AdjEffectiveDate, a.AdjAmount, a.AdjAdminAmount, a.BillingHistoryID, a.AdjExpDateTime, a.AdjExportLastAmt
+from scdraws d
+left join screturns r
+	on d.drawid = r.drawid
+left join scdrawadjustments a
+	on d.drawid = a.drawid	
+join #dups dups
+	on d.drawid = dups.drawid
+*/
+
+commit tran

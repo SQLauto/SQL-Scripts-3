@@ -1,0 +1,23 @@
+
+create table dbo.support_tempConfigSettings ( UpdateCmd nvarchar(4000) )
+
+insert into support_tempConfigSettings ( UpdateCmd )
+select 'update ' + db_name() + '..syncConfigurationPropertyValues set PropertyValue = ''' + v.PropertyValue + ''' where v.ConfigurationPropertyId = ' + cast( v.ConfigurationPropertyId as varchar)	from syncConfigurationProperties p join syncConfigurationPropertyValues v on p.ConfigurationPropertyId = v.ConfigurationPropertyId where ( p.PropertyName like '%url%' or p.PropertyName like '%api%' or p.PropertyName like '%version%' ) and isnull(v.PropertyValue,'') <> ''
+
+select UpdateCmd from dbo.support_tempConfigSettings
+
+declare @OutputFile NVARCHAR(100)
+declare @FilePath NVARCHAR(100) 
+declare @bcpCommand NVARCHAR(1000)
+ 
+SET @bcpCommand =  'bcp "select UpdateCmd from ' + db_name() + '.dbo.support_tempConfigSettings " queryout '
+SET @FilePath = 'C:\Syncronex\Syncronex_Support\'
+
+SET @OutputFile = 'ConfigSettings_' + db_name() + '_' + convert(varchar, getdate(), 112)
+print @outputfile
+
+SET @bcpCommand = @bcpCommand + @FilePath + @OutputFile + ' -c -t, -T -S '+ @@servername 
+print @bcpCommand
+exec master..xp_cmdshell @bcpCommand
+
+drop table dbo.support_tempConfigSettings

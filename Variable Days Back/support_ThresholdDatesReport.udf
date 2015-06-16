@@ -1,0 +1,168 @@
+
+IF EXISTS (
+  SELECT * 
+    FROM INFORMATION_SCHEMA.ROUTINES 
+   WHERE SPECIFIC_SCHEMA = N'dbo'
+     AND SPECIFIC_NAME = N'support_ThresholdDatesReport' 
+)
+   DROP FUNCTION [dbo].[support_ThresholdDatesReport]
+GO
+
+CREATE FUNCTION [dbo].[support_ThresholdDatesReport] (
+	@Today datetime
+)
+RETURNS @ThresholdDates TABLE
+(
+	AccountTypeId int
+	,PublicationId int
+	,returnThreshold datetime
+	,RuleType nvarchar(20)
+	,PeriodStartDate datetime
+	,PeriodLength int
+	,cutoffDay int
+	,DayInPeriod int
+	,CurrentPeriodStartDate datetime
+	,CutoffDateInPeriod datetime
+	,NewReturnThresholdDate datetime
+	)
+AS
+/************************************************************************
+	support_ThresholdDatesReport.UDF - Created on 6/28/2007 by kerry
+
+	Returns a table containing distinct AcctTypes/Pub combinations,
+	the corresponding VDB settings, and the return threshold.
+
+	Change History
+	-----------------------------------------------------
+	$History: $
+
+*************************************************************************/
+BEGIN
+	declare @accounttypeid int
+	declare @publicationid int
+
+	declare @periodLength int			-- days in billing period
+	declare @periodStartDate datetime	-- start date of initial period, in case period is more than one week
+	declare @cutoffDay int				-- day in period where return threshhold changes (one-based)
+	declare @returnThreshold datetime
+	declare @sDate varchar(20)
+	declare @ruleType nvarchar(20)
+
+
+	--|Loop through each AccountType/Pub combination to see which VDB rule type will be applied
+	declare thresholddates_cursor cursor
+	for
+		select AccountTypeId, PublicationId
+		from dd_scAccountTypes ddat
+		join nsPublications p
+		 on 1=1	
+	/*
+		select distinct accounttypeid, publicationid
+		from scdraws drw
+		join scaccounts acc
+		on drw.accountid = acc.accountid
+		where accounttypeid not in ( select accounttypeid from dd_scaccounttypes where atname = 'rollup' )
+	*/
+	open thresholddates_cursor
+	fetch next from thresholddates_cursor into @accounttypeid, @publicationid
+	while @@fetch_status = 0
+	begin
+		/*
+			Config values can be defined for the account type, for the publication, or globally in 
+			system properties, and this is the precedence order.
+			If none of the three sets is found, we fall back on the old 'ReturnThreshhold' system property.
+		*/
+		-- See if we have config values for this account type (account type rule takes precedence)
+		select @periodLength	= PeriodLength from scVariableDaysBack where AccountTypeId = @accountTypeId
+		select @periodStartDate	= PeriodStartDate from scVariableDaysBack where AccountTypeId = @accountTypeId
+		select @cutoffDay		= PeriodCutoffDay from scVariableDaysBack where AccountTypeId = @accountTypeId
+		select @ruleType = 'Acct Type'
+		
+		--set @cutoffDay = datepart(dw, dateadd(d, @cutoffDay - 1, @periodStartDate))
+		
+		if @periodLength is null
+		begin
+			-- See if we have config values for this Publication
+			select @periodLength	= PeriodLength from scVariableDaysBack where PublicationId = @publicationId
+			select @periodStartDate	= PeriodStartDate from scVariableDaysBack where PublicationId = @publicationId
+			select @cutoffDay		= PeriodCutoffDay from scVariableDaysBack where PublicationId = @publicationId
+			select @ruleType = 'Publication'
+			
+			--set @cutoffDay = datepart(dw, dateadd(d, @cutoffDay - 1, @periodStartDate))
+			
+			if @periodLength is null
+			begin
+				-- See if we have config values in the system properteis
+				select	@periodLength 		= [SysPropertyValue] FROM [dbo].[syncSystemProperties] WHERE [SysPropertyName] = N'SalesPeriodLength'
+				select	@periodStartDate	= [SysPropertyValue] FROM [dbo].[syncSystemProperties] WHERE [SysPropertyName] = N'SalesPeriodStartDate'
+				select	@cutoffDay 			= [SysPropertyValue] FROM [dbo].[syncSystemProperties] WHERE [SysPropertyName] = N'SalesPeriodCutoffDay'
+				select @ruleType = 'System'
+				
+				--set @cutoffDay = datepart(dw, dateadd(d, @cutoffDay - 1, @periodStartDate))
+				
+				if @periodLength is null
+				begin
+					select @cutoffDay = cast(syspropertyvalue as int) from dbo.syncsystemproperties where syspropertyname = N'ReturnThreshhold'
+					if @cutoffDay is null
+						-- We don't even have the original property, so...
+						begin
+							set @cutoffDay = 7 -- default is one week back
+						end
+					
+					--set @cutoffDay = datepart(dw, dateadd(d, @cutoffDay - 1, @periodStartDate))
+
+					set @returnThreshold = dateadd( d, (-1 * @cutoffDay), @Today )
+					-- Set time to 00:00:00
+					set @sDate = convert( varchar, @returnThreshold, 101 ) 
+					set @returnThreshold = convert( datetime, @sDate )
+					select @ruleType = 'Default'
+				end
+			end
+		end
+
+		--|Get the threshold date based on "Today" and the corresponding VBD settings
+		set @returnThreshold = dbo.scthreshholddate( @Today, @periodLength, @periodStartDate, @cutoffDay )
+
+		--|Insert the data into the table @ThresholdDates
+		insert into @ThresholdDates
+		select @accounttypeid, @publicationid, @returnThreshold as [Return Threshold]
+			, @ruleType as [Rule Type]
+			, @periodStartDate
+			, @periodLength			
+			, @cutoffDay
+			
+			, ( datediff(day, (dateadd(day, ( (floor((datediff(day, @periodStartDate, @today)) / @periodLength)) * @periodLength), @periodStartDate) ), @today)  )
+			
+			, convert(varchar, dateadd(d, 
+				( DATEDIFF(d, @periodStartDate, @today) / @periodLength ) * @periodLength
+				, @periodStartDate ), 101)
+			as [CurrentPeriodStartDate]--[ThisPeriodStart ( Add PeriodNum * PeriodLength to PeriodStart )]
+			
+			, dateadd(d
+				, @cutoffDay
+				, convert(varchar, dateadd(d, 
+					( DATEDIFF(d, @periodStartDate, @today) / @periodLength ) * @periodLength
+					, @periodStartDate ), 101)
+				) as [CutoffDateInPeriod]	
+				
+			, dbo.scthreshholddate( 
+				dateadd(d
+				, @cutoffDay
+				, convert(varchar, dateadd(d, 
+					( DATEDIFF(d, @periodStartDate, @today) / @periodLength ) * @periodLength
+					, @periodStartDate ), 101)
+				)
+				, @periodLength, @periodStartDate, @cutoffDay ) as [NewReturnThresholdDate]	
+				
+		--|Re-Initialize the variables
+		set @periodLength = null
+		set @periodStartDate = null
+		set @cutoffDay = null
+		set @ruleType = null
+
+	fetch next from thresholddates_cursor into @accounttypeid, @publicationid
+	end
+
+	--|return the resulte from the table @ThresholdDates
+	RETURN
+END

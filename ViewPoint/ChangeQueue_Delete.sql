@@ -1,0 +1,13 @@
+use sdmconfig
+
+delete ArchiveChangeQueueEntityEmail
+delete ArchiveChangeQueueEntityDetail
+delete ArchiveChangeQueueEntityKey
+delete ArchiveChangeQueueEntity
+delete ArchiveChangeQueueHeader
+
+delete ChangeQueueEntityEmail
+delete ChangeQueueEntityDetail
+delete ChangeQueueEntityKey
+delete ChangeQueueEntity
+delete ChangeQueueHeader

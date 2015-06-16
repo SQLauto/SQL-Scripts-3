@@ -1,0 +1,49 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[support_AcctPubs]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [dbo].[support_AcctPubs]
+GO
+
+SET ANSI_NULLS OFF
+GO
+
+SET QUOTED_IDENTIFIER OFF
+GO
+
+CREATE FUNCTION [dbo].[support_AcctPubs] (
+	  @accountPubId int
+)	
+RETURNS @table TABLE
+(
+	  AccountPubId int
+	, AcctCode nvarchar(20)
+	, AccountId int
+	, PubShortName nvarchar(20)
+	, PublicationId int
+)
+
+AS
+/************************************************************************
+
+	$History: $
+
+*************************************************************************/
+BEGIN
+	
+	insert into @table
+	select ap.AccountPubId, a.AcctCode, a.AccountId, p.PubShortName, p.PublicationId
+	from scAccountsPubs ap
+	join scAccounts a
+		on a.AccountId = ap.AccountId
+	join nsPublications p
+		on ap.PublicationId = p.PublicationId	
+	where 
+		(
+			( @accountPubId is null and ap.AccountPubId > 0 )
+			or ( @accountPubId is not null and ap.AccountPubId = @accountPubId )
+		)	
+	
+	RETURN
+END
+GO	
+
+select *
+from support_acctpubs()

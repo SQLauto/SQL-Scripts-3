@@ -1,0 +1,53 @@
+
+begin tran
+
+select ph.*
+from seUsers u
+join seMemberships m
+	on u.UserId = m.UserID
+join Subscribers s
+	on s.UserId = u.UserId
+join SubscriberPlans sp
+	on s.UserId = sp.UserId
+join sePlans p
+	on sp.PlanId = p.PlanID
+left join PhoneNumbers ph
+	on s.UserId = ph.UserId
+where p.Code = 'comp'
+and datediff(d, CreatedDate, '6/10/2014') = 0
+--and PhoneNumber = '0000000000'
+
+update PhoneNumbers
+set phonenumber = '2199333200'
+from seUsers u
+join seMemberships m
+	on u.UserId = m.UserID
+join Subscribers s
+	on s.UserId = u.UserId
+join SubscriberPlans sp
+	on s.UserId = sp.UserId
+join sePlans p
+	on sp.PlanId = p.PlanID
+left join PhoneNumbers ph
+	on s.UserId = ph.UserId
+where p.Code = 'comp'
+and datediff(d, CreatedDate, '6/10/2014') = 0
+--and PhoneNumber = '0000000000'
+
+select ph.*
+from seUsers u
+join seMemberships m
+	on u.UserId = m.UserID
+join Subscribers s
+	on s.UserId = u.UserId
+join SubscriberPlans sp
+	on s.UserId = sp.UserId
+join sePlans p
+	on sp.PlanId = p.PlanID
+left join PhoneNumbers ph
+	on s.UserId = ph.UserId
+where p.Code = 'comp'
+and datediff(d, CreatedDate, '6/10/2014') = 0
+--and PhoneNumber = '0000000000'
+
+commit tran

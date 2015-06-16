@@ -1,0 +1,31 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[support_log]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [dbo].[support_log]
+GO
+
+CREATE FUNCTION [dbo].[support_log](
+	@daysBack	int = 0
+,	@text		nvarchar(50) = null
+)
+RETURNS @data TABLE( 
+	SLTimeStamp datetime
+	, LogMessage nvarchar(2048)
+ )
+AS
+BEGIN
+	
+
+	insert @data
+	select SLTimeStamp, LogMessage
+	from syncSystemLog 
+	where SLTimestamp >= dateadd(d, -1*@daysBack, convert( nvarchar, getdate(), 1) )
+	and (
+		( @text is null and SystemLogId > 0 )
+		or ( @text is not null and LogMessage like '%' + @text + '%' )
+	)
+	
+	return
+END
+GO
+
+select *
+from dbo.support_log(1, 'forecast')

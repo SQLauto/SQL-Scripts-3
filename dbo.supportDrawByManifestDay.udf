@@ -1,0 +1,65 @@
+USE [NSDB_CHI]
+GO
+
+/****** Object:  UserDefinedFunction [dbo].[supportDrawByManifestByDay]    Script Date: 03/18/2011 11:20:26 ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[supportDrawByManifestByDay]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [dbo].[supportDrawByManifestByDay]
+GO
+
+USE [NSDB_CHI]
+GO
+
+/****** Object:  UserDefinedFunction [dbo].[supportDrawByManifestByDay]    Script Date: 03/18/2011 11:20:26 ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER OFF
+GO
+
+
+CREATE FUNCTION [dbo].[supportDrawByManifestByDay](
+	@manifestId		INT
+,	@start			DATETIME
+,	@end			DATETIME
+)
+RETURNS @data TABLE( DrawId INT
+	, DrawDate datetime, DrawWeekday int, DrawAmount int, AdjAdminAmount int, AdjAmount int, RetAmount int
+	, AccountId INT, PublicationId INT, AccountPubId INT )
+AS
+BEGIN
+INSERT @data
+	SELECT
+			D.DrawID, D.DrawDate
+			, d.DrawWeekday, d.DrawAmount, d.AdjAdminAmount, d.AdjAmount, d.RetAmount
+			,D.AccountID,D.PublicationID,AP.AccountPubID
+	FROM	dbo.scDraws D
+	JOIN	dbo.scAccountsPubs AP ON D.AccountID = AP.AccountId AND D.PublicationID = AP.PublicationId
+	JOIN	dbo.scManifestSequenceItems MSI ON MSI.AccountPubId = AP.AccountPubID
+	JOIN	dbo.scManifestSequenceTemplates MST ON MSI.ManifestSequenceTemplateId = MST.ManifestSequenceTemplateId
+
+	WHERE	D.DrawDate BETWEEN @start AND @end
+	AND		MST.ManifestTemplateId = @manifestId
+	AND		( MST.Frequency & dbo.scGetDayFrequency(D.Drawdate) ) > 0
+
+	UNION
+
+	SELECT
+			D.DrawID,D.DrawDate
+			, d.DrawWeekday, d.DrawAmount, d.AdjAdminAmount, d.AdjAmount, d.RetAmount
+			,D.AccountID,D.PublicationID,AP.AccountPubID
+	FROM	dbo.scDraws D
+	JOIN	dbo.scAccountsPubs AP ON D.AccountID = AP.AccountId AND D.PublicationID = AP.PublicationId
+	JOIN	dbo.scManifestSequences MS ON MS.AccountPubId = AP.AccountPubID
+	JOIN	dbo.scManifests M ON MS.ManifestId = M.ManifestID
+
+	WHERE	D.DrawDate BETWEEN @start AND @end
+	AND		M.ManifestDate = D.DrawDate
+	AND		M.ManifestTemplateId = @manifestId
+
+RETURN
+
+END
+
+GO
+
+

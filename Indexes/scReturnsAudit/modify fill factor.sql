@@ -1,0 +1,4 @@
+
+
+ALTER INDEX PK_scReturnsAudit ON scReturnsAudit
+REBUILD WITH (FILLFACTOR = 95);

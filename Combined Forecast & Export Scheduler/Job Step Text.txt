@@ -1,0 +1,69 @@
+/*
+	Friday for Monday
+*/
+
+--| declarations
+declare @beginDateOffset_RelativeToRunOnDay int
+declare @endDateOffset_RelativeToRunOnDay int
+declare @runonday varchar(9)	--| Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|null
+declare @loggingLevel int	
+declare @overwriteUserEdits bit
+declare @newAccountsOnly bit
+declare @delay_seconds int
+declare @delay nvarchar(8)
+	
+--| set variables
+set @beginDateOffset_RelativeToRunOnDay = 3
+set @endDateOffset_RelativeToRunOnDay = 3
+set @runonday = 'Friday'
+set @loggingLevel = null
+set @overwriteUserEdits = 0
+set @newAccountsOnly = 0
+set @delay_seconds = 120
+set @delay = convert(varchar, dateadd(ms, @delay_seconds*1000,0), 114)
+
+/*
+	forecast for date range
+	
+	note: the forecast scheduler will delay if a forecast is already running
+*/	
+exec support_ForecastScheduler @beginDateOffset_RelativeToRunOnDay, @endDateOffset_RelativeToRunOnDay, @runonday, @loggingLevel, @overwriteUserEdits, @newAccountsOnly, @delay_seconds
+
+
+declare @forecastRunning bit
+
+select @forecastRunning = Running  
+from support_EngineStatus
+where Engine = 'Forecast'
+
+while @forecastRunning = 1
+begin
+
+	print 'Forecast is still running, delaying the export' + cast(@delay_seconds as nvarchar) + ' seconds.'
+	waitfor delay @delay
+	
+	select @forecastRunning = Running  
+	from support_EngineStatus
+	where Engine = 'Forecast'
+end
+
+
+--|forecast is no longer running, run the export
+declare @exportType varchar(9)	--| Return|Adjustment|Forecast|Custom|Invoice
+declare @pathToConfigFile nvarchar(1000)
+declare @configFile nvarchar(100)
+declare @pubFrequency int
+
+--| set variables
+set @beginDateOffset_RelativeToRunOnDay = 3
+set @endDateOffset_RelativeToRunOnDay = 9
+set @exportType = 'Forecast'
+set @configFile = 'WeeklyForecastExport.xml'
+set @pathToConfigFile = 'E:\Program Files (x86)\Syncronex\SingleCopy\DataIO\nsdb_ajc'
+set @pubFrequency = 2
+set @delay_seconds = 15
+
+exec support_ForecastExportScheduler @beginDateOffset_RelativeToRunOnDay, @endDateOffset_RelativeToRunOnDay, @runonday, @pubFrequency, @exportType, @pathToConfigFile, @configFile, @delay_seconds
+
+
+

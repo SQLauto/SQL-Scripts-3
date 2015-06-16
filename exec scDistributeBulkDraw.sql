@@ -1,0 +1,1 @@
+exec scDistributeBulkDraw @drawDate='Sep  7 2010 120000000AM',@userId=8,@Amount=52,@newAmount=0,@publicationId=1,@manifestId=0,@acctTypeList=N'',@acctCode=N'',@acctName=N'',@acctAddress=N'',@acctCity=N'',@acctState=N'',@acctZip=N'',@acctCategoryList=N'',@acctCustom1=N'',@acctCustom2=N'',@acctCustom3=N'',@ownerId=0,@drillDownId=2,@drillDownValue=N'1'
